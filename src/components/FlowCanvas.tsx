@@ -1,16 +1,17 @@
 import { useCallback, useState } from 'react';
 import {
   ReactFlow,
-  useNodesState,
   MiniMap,
   Controls,
   Background,
   Panel,
-  useEdgesState,
-  addEdge,
-  Edge,
   Connection,
   MarkerType,
+  applyNodeChanges,
+  applyEdgeChanges,
+  OnNodesChange,
+  OnEdgesChange,
+  Edge,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import TaskNode from './TaskNode';
@@ -18,53 +19,55 @@ import { TaskNodeType } from '../types/flow';
 import Button from './ui/Button';
 import TaskEditPanel from './TaskEditPanel';
 import CustomEdge from './CustomEdge';
+import { useAppDispatch, useAppSelector } from '../hooks/redux';
+import {
+  addNode,
+  updateNode,
+  deselectAllNodes,
+  setNodes,
+} from '../store/nodesSlice';
+import {
+  addEdge,
+  setEdges,
+} from '../store/edgesSlice';
 
-
-const initialNodes: TaskNodeType[] = [
-  {
-    id: '1',
-    type: 'taskNode',
-    data: { label: 'Task 1' },
-    position: { x: 0, y: 0 },
-  },
-  {
-    id: '2',
-    type: 'taskNode',
-    data: { label: 'Task 2' },
-    position: { x: 100, y: 100 },
-  },
-];
-
-const initialEdges: Edge[] = [];
 
 const FlowCanvas = () => {
-  const [nodes, setNodes, onNodesChange] = useNodesState<TaskNodeType>(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+  const dispatch = useAppDispatch();
+  const nodes = useAppSelector((state) => state.nodes.nodes);
+  const edges = useAppSelector((state) => state.edges.edges);
   const [activeNodeId, setActiveNodeId] = useState<string | null>(null);
 
+  const onNodesChange: OnNodesChange<TaskNodeType> = useCallback(
+    (changes) => {
+      const clonedNodes = structuredClone(nodes);
+      const updatedNodes = applyNodeChanges(changes, clonedNodes);
+      dispatch(setNodes(updatedNodes));
+    },
+    [dispatch, nodes]
+  );
 
-
-  const handleDeleteEdge = useCallback((id: string) => {
-    setEdges((eds) => eds.filter((e) => e.id !== id));
-  }, [setEdges]);
+  const onEdgesChange: OnEdgesChange<Edge> = useCallback(
+    (changes) => {
+      const updatedEdges = applyEdgeChanges(changes, edges);
+      dispatch(setEdges(updatedEdges));
+    },
+    [dispatch, edges]
+  );
 
   const onConnect = useCallback(
     (params: Connection) => {
-      setEdges((eds) =>
-        addEdge(
-          {
-            ...params,
-            type: 'custom',
-            data: { onDelete: handleDeleteEdge },
-            markerEnd: {
-              type: MarkerType.Arrow,
-            },
-          },
-          eds
-        )
-      );
+      const newEdge = {
+        ...params,
+        id: `${params.source}-${params.target}`,
+        type: 'custom',
+        markerEnd: {
+          type: MarkerType.Arrow,
+        },
+      };
+      dispatch(addEdge(newEdge));
     },
-    [setEdges, handleDeleteEdge]
+    [dispatch]
   );
 
   const onNodeClick = useCallback((event: React.MouseEvent, node: TaskNodeType) => {
@@ -86,6 +89,7 @@ const FlowCanvas = () => {
   );
 
   const handleAddTask = () => {
+    dispatch(deselectAllNodes());
     const newNode: TaskNodeType = {
       id: (nodes.length + 1).toString(),
       type: 'taskNode',
@@ -93,19 +97,19 @@ const FlowCanvas = () => {
       position: { x: Math.random() * 250, y: Math.random() * 250 },
       selected: true,
     };
-    setNodes((nds) => {
-      return  nds.map((node) => (node.selected ? { ...node, selected: false } : node)).concat(newNode)
-    });
+    // setNodes((nds) => {
+    //   return  nds.map((node) => (node.selected ? { ...node, selected: false } : node)).concat(newNode)
+    // });
+    dispatch(addNode(newNode));
     setActiveNodeId(newNode.id);
   };
 
-  const handleNodeLabelChange = useCallback((id: string, label: string) => {
-    setNodes((nds) =>
-      nds.map((node) =>
-        node.id === id ? { ...node, data: { ...node.data, label } } : node
-      )
-    );
-  }, [setNodes]);
+  const handleNodeLabelChange = useCallback(
+    (id: string, label: string) => {
+      dispatch(updateNode({ id, label }));
+    },
+    [dispatch]
+  );
 
   const nodeTypes = {
     taskNode: TaskNode,
