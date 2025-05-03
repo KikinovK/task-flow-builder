@@ -1,7 +1,7 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { TaskNodeType } from '../types/flow';
 
-interface NodesState {
+export interface NodesState {
   nodes: TaskNodeType[];
 }
 

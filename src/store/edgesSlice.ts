@@ -1,7 +1,7 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { Edge } from '@xyflow/react';
 
-interface EdgesState {
+export interface EdgesState {
   edges: Edge[];
 }
 

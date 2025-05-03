@@ -97,9 +97,6 @@ const FlowCanvas = () => {
       position: { x: Math.random() * 250, y: Math.random() * 250 },
       selected: true,
     };
-    // setNodes((nds) => {
-    //   return  nds.map((node) => (node.selected ? { ...node, selected: false } : node)).concat(newNode)
-    // });
     dispatch(addNode(newNode));
     setActiveNodeId(newNode.id);
   };
