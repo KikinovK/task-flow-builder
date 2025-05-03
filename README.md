@@ -16,13 +16,17 @@ Follow the steps below to run the project locally.
 * pnpm / npm / yarn (choose one package manager)
 
 ### Installation
-
-```sh
 # Clone the repository
+```sh
 git clone https://github.com/KikinovK/task-flow-builder.git
+```
+```sh
 cd task-flow-builder
+```
 
 # Install dependencies
+
+```sh
 npm install
 ```
 
