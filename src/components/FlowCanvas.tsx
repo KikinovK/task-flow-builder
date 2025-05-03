@@ -6,12 +6,18 @@ import {
   Controls,
   Background,
   Panel,
+  useEdgesState,
+  addEdge,
+  Edge,
+  Connection,
+  MarkerType,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import TaskNode from './TaskNode';
 import { TaskNodeType } from '../types/flow';
 import Button from './ui/Button';
 import TaskEditPanel from './TaskEditPanel';
+import CustomEdge from './CustomEdge';
 
 
 const initialNodes: TaskNodeType[] = [
@@ -29,9 +35,37 @@ const initialNodes: TaskNodeType[] = [
   },
 ];
 
+const initialEdges: Edge[] = [];
+
 const FlowCanvas = () => {
   const [nodes, setNodes, onNodesChange] = useNodesState<TaskNodeType>(initialNodes);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const [activeNodeId, setActiveNodeId] = useState<string | null>(null);
+
+
+
+  const handleDeleteEdge = useCallback((id: string) => {
+    setEdges((eds) => eds.filter((e) => e.id !== id));
+  }, [setEdges]);
+
+  const onConnect = useCallback(
+    (params: Connection) => {
+      setEdges((eds) =>
+        addEdge(
+          {
+            ...params,
+            type: 'custom',
+            data: { onDelete: handleDeleteEdge },
+            markerEnd: {
+              type: MarkerType.Arrow,
+            },
+          },
+          eds
+        )
+      );
+    },
+    [setEdges, handleDeleteEdge]
+  );
 
   const onNodeClick = useCallback((event: React.MouseEvent, node: TaskNodeType) => {
     event.stopPropagation();
@@ -77,14 +111,22 @@ const FlowCanvas = () => {
     taskNode: TaskNode,
   };
 
+  const edgeTypes = {
+    custom: CustomEdge,
+  };
+
   const activeNode = nodes.find((node) => node.id === activeNodeId);
 
   return (
     <div className="w-full h-screen">
       <ReactFlow
         nodes={nodes}
+        edges={edges}
         onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
+        onConnect={onConnect}
         nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
         onNodeClick={onNodeClick}
         onPaneClick={onPaneClick}
         onNodeDragStart={onNodeDragStart}
