@@ -102,10 +102,12 @@ const FlowCanvas = () => {
   };
 
   const handleNodeLabelChange = useCallback(
-    (id: string, label: string) => {
-      dispatch(updateNode({ id, label }));
+    (label: string) => {
+      if (!activeNodeId) return;
+      dispatch(updateNode({ id: activeNodeId, label }));
+      setActiveNodeId(null);
     },
-    [dispatch]
+    [dispatch, activeNodeId]
   );
 
   const nodeTypes = {
@@ -137,10 +139,7 @@ const FlowCanvas = () => {
           <Panel position="top-right">
             <TaskEditPanel
               initialLabel={activeNode.data.label}
-              onConfirm={(newLabel) => {
-                handleNodeLabelChange(activeNode.id, newLabel);
-                setActiveNodeId(null);
-              }}
+              onConfirm={handleNodeLabelChange}
               onCancel={() => setActiveNodeId(null)}
             />
           </Panel>
